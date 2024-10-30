@@ -9,6 +9,7 @@ import 'hardhat-contract-sizer'
 
 import './tasks/accounts'
 import './tasks/process-signatures'
+import './tasks/store-signatures'
 
 dotenv.config()
 
