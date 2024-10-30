@@ -1,4 +1,3 @@
-import { parseEther } from 'viem'
 import hre from 'hardhat'
 import SignatureRepositoryModule from '../ignition/modules/SignatureRepository'
 

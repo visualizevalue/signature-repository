@@ -1,4 +1,3 @@
-import { parseEther } from 'viem'
 import { task } from 'hardhat/config'
 
 task('accounts', 'Prints the list of accounts', async (_, hre) => {
