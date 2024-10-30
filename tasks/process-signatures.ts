@@ -87,12 +87,12 @@ task('process-signatures', 'Process signature SVG files')
         }
 
         // Store original path data
-        pathData[fileNum] = pathD
+        pathData[i] = pathD
         totalOriginalChars += pathD.length
 
         // Process and store rounded path data
         const roundedPathD = roundPathData(pathD)
-        pathDataSm[fileNum] = roundedPathD
+        pathDataSm[i] = roundedPathD
         totalRoundedChars += roundedPathD.length
 
         // Create new SVG with rounded path
