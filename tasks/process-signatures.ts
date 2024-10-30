@@ -7,7 +7,7 @@ interface PathData {
 }
 
 function roundToInteger(numStr: string): string {
-  return Math.round(parseFloat(numStr)).toString()
+  return parseFloat(numStr).toFixed(1).toString()
 }
 
 function roundPathData(pathD: string): string {
