@@ -129,7 +129,7 @@ contract SignatureRepository {
     /// @param signer Address of the signature owner
     /// @param index Index of the signature to generate URI for
     /// @return Base64 encoded data URI containing the SVG
-    function uri(address signer, uint256 index) public view returns (string memory) {
+    function uri(address signer, uint256 index) external view returns (string memory) {
         return string(abi.encodePacked(
             'data:image/svg+xml;base64,',
             Base64.encode(bytes(svg(signer, index)))
@@ -142,7 +142,7 @@ contract SignatureRepository {
     /// @param color The signature stroke color
     /// @param width The signature stroke width
     /// @return Base64 encoded data URI containing the SVG
-    function uri(address signer, uint256 index, string memory color, string memory width) public view returns (string memory) {
+    function uri(address signer, uint256 index, string memory color, string memory width) external view returns (string memory) {
         return string(abi.encodePacked(
             'data:image/svg+xml;base64,',
             Base64.encode(bytes(svg(signer, index, color, width)))
