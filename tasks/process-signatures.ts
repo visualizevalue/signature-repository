@@ -1,5 +1,5 @@
 import { task } from 'hardhat/config'
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'fs'
 import { join } from 'path'
 
 interface PathData {
@@ -11,13 +11,45 @@ function roundToInteger(numStr: string): string {
 }
 
 function roundPathData(pathD: string): string {
-  // Match all numbers (including decimals) in the path
   return pathD.replace(/[-+]?[0-9]*\.?[0-9]+/g, roundToInteger)
 }
 
 function extractPathData(svgContent: string): string {
   const match = svgContent.match(/d="([^"]*)"/)
   return match ? match[1] : ''
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 Bytes'
+
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
+}
+
+function compareFiles(file1Path: string, file2Path: string): void {
+  const size1 = statSync(file1Path).size
+  const size2 = statSync(file2Path).size
+  const reduction = size1 - size2
+  const percentReduction = ((reduction / size1) * 100).toFixed(2)
+
+  console.log('\nSize comparison:')
+  console.log(`signatures.json:     ${formatBytes(size1)}`)
+  console.log(`signatures-sm.json:  ${formatBytes(size2)}`)
+  console.log(`Reduction:          ${formatBytes(reduction)} (${percentReduction}%)`)
+
+  // Calculate average path size
+  const data1 = JSON.parse(readFileSync(file1Path, 'utf8'))
+  const data2 = JSON.parse(readFileSync(file2Path, 'utf8'))
+
+  const avgSize1 = size1 / Object.keys(data1).length
+  const avgSize2 = size2 / Object.keys(data2).length
+
+  console.log('\nAverage path size:')
+  console.log(`Original:           ${formatBytes(avgSize1)}`)
+  console.log(`Rounded:            ${formatBytes(avgSize2)}`)
 }
 
 task('process-signatures', 'Process signature SVG files')
@@ -35,6 +67,9 @@ task('process-signatures', 'Process signature SVG files')
 
     const pathData: PathData = {}
     const pathDataSm: PathData = {}
+    let filesProcessed = 0
+    let totalOriginalChars = 0
+    let totalRoundedChars = 0
 
     // Process each SVG file
     for (let i = 1; i <= 79; i++) {
@@ -53,34 +88,46 @@ task('process-signatures', 'Process signature SVG files')
 
         // Store original path data
         pathData[fileNum] = pathD
+        totalOriginalChars += pathD.length
 
         // Process and store rounded path data
         const roundedPathD = roundPathData(pathD)
         pathDataSm[fileNum] = roundedPathD
+        totalRoundedChars += roundedPathD.length
 
         // Create new SVG with rounded path
         const newSvgContent = svgContent.replace(/d="[^"]*"/, `d="${roundedPathD}"`)
         writeFileSync(join(smallDir, fileName), newSvgContent)
 
-        console.log(`Processed ${fileName}`)
+        filesProcessed++
+        process.stdout.write(`Processing files: ${filesProcessed}/79\r`)
       } catch (error) {
         console.error(`Error processing ${fileName}:`, error)
       }
     }
 
-    // Write JSON files
-    writeFileSync(
-      join(baseDir, 'signatures.json'),
-      JSON.stringify(pathData, null, 2)
-    )
-    writeFileSync(
-      join(baseDir, 'signatures-sm.json'),
-      JSON.stringify(pathDataSm, null, 2)
-    )
+    console.log('\nWriting JSON files...')
 
-    console.log('\nProcessing complete!')
-    console.log('Created:')
+    const signaturesPath = join(baseDir, 'signatures.json')
+    const signaturesSMPath = join(baseDir, 'signatures-sm.json')
+
+    // Write JSON files
+    writeFileSync(signaturesPath, JSON.stringify(pathData, null, 2))
+    writeFileSync(signaturesSMPath, JSON.stringify(pathDataSm, null, 2))
+
+    // Compare files
+    compareFiles(signaturesPath, signaturesSMPath)
+
+    // Path data statistics
+    const avgCharReduction = ((totalOriginalChars - totalRoundedChars) / totalOriginalChars * 100).toFixed(2)
+    console.log('\nPath data statistics:')
+    console.log(`Average characters per path:`)
+    console.log(`Original:           ${Math.round(totalOriginalChars / filesProcessed)}`)
+    console.log(`Rounded:            ${Math.round(totalRoundedChars / filesProcessed)}`)
+    console.log(`Character reduction: ${avgCharReduction}%`)
+
+    console.log('\nFiles created:')
     console.log('- ./data/signatures.json')
     console.log('- ./data/signatures-sm.json')
-    console.log('- ./data/jack/sm/*.svg files')
+    console.log(`- ${filesProcessed} SVG files in ./data/jack/sm/`)
   })
