@@ -103,9 +103,24 @@ contract SignatureRepository {
     /// @param index Index of the signature to generate SVG for
     /// @return Full SVG markup as a string
     function svg(address signer, uint256 index) public view returns (string memory) {
+        return svg(signer, index, 'black', '4px');
+    }
+
+    /// @notice Generate a complete SVG for a signature
+    /// @param signer Address of the signature owner
+    /// @param index Index of the signature to generate SVG for
+    /// @param color The signature stroke color
+    /// @param width The signature stroke width
+    /// @return Full SVG markup as a string
+    function svg(address signer, uint256 index, string memory color, string memory width) public view returns (string memory) {
         return string(abi.encodePacked(
-            '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">',
-                signaturePath(signer, index),
+            '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">'
+                '<p '
+                    'stroke="', color, '" '
+                    'stroke-width="', width, '" '
+                    'fill="none" '
+                    'd="', signaturePath(signer, index), '"'
+                '/>'
             '</svg>'
         ));
     }
@@ -118,6 +133,19 @@ contract SignatureRepository {
         return string(abi.encodePacked(
             'data:image/svg+xml;base64,',
             Base64.encode(bytes(svg(signer, index)))
+        ));
+    }
+
+    /// @notice Generate a base64 encoded data URI for the signature SVG
+    /// @param signer Address of the signature owner
+    /// @param index Index of the signature to generate URI for
+    /// @param color The signature stroke color
+    /// @param width The signature stroke width
+    /// @return Base64 encoded data URI containing the SVG
+    function uri(address signer, uint256 index, string memory color, string memory width) public view returns (string memory) {
+        return string(abi.encodePacked(
+            'data:image/svg+xml;base64,',
+            Base64.encode(bytes(svg(signer, index, color, width)))
         ));
     }
 }

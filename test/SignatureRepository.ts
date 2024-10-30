@@ -12,6 +12,9 @@ describe('SignatureRepository', function () {
   const sampleSignature2 = [
     encodePacked(['string'], ['M30 30 L70 70'])
   ]
+  const sampleSignature3 = [
+    encodePacked(['string'], ['M10 10 L90 90'])
+  ]
   const emptySignature: Uint8Array[] = []
   const signatureWithEmptyPath = [[]]
 
@@ -116,7 +119,168 @@ describe('SignatureRepository', function () {
     })
   })
 
+  describe('SVG generation with default parameters', function () {
+    it('should generate SVG with default styling', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([signer0.account.address, 0n])
+      expect(svg).to.include('viewBox="0 0 512 512"')
+      expect(svg).to.include('xmlns="http://www.w3.org/2000/svg"')
+      expect(svg).to.include('stroke="black"')
+      expect(svg).to.include('stroke-width="4px"')
+      expect(svg).to.include('fill="none"')
+      expect(svg).to.include('d="M10 10 L90 90"')
+    })
+
+    it('should generate URI with default styling', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const uri = await contract.read.uri([signer0.account.address, 0n])
+      expect(uri).to.include('data:image/svg+xml;base64,')
+
+      const base64Content = uri.split(',')[1]
+      const decodedContent = Buffer.from(base64Content, 'base64').toString()
+      expect(decodedContent).to.include('stroke="black"')
+      expect(decodedContent).to.include('stroke-width="4px"')
+    })
+  })
+
+  describe('SVG generation with custom parameters', function () {
+    it('should generate SVG with custom color and width', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([signer0.account.address, 0n, 'red', '2px'])
+      expect(svg).to.include('stroke="red"')
+      expect(svg).to.include('stroke-width="2px"')
+      expect(svg).to.include('fill="none"')
+      expect(svg).to.include('d="M10 10 L90 90"')
+    })
+
+    it('should generate URI with custom color and width', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const uri = await contract.read.uri([signer0.account.address, 0n, 'blue', '6px'])
+      expect(uri).to.include('data:image/svg+xml;base64,')
+
+      const base64Content = uri.split(',')[1]
+      const decodedContent = Buffer.from(base64Content, 'base64').toString()
+      expect(decodedContent).to.include('stroke="blue"')
+      expect(decodedContent).to.include('stroke-width="6px"')
+    })
+
+    it('should handle hex colors', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([signer0.account.address, 0n, '#FF5733', '3px'])
+      expect(svg).to.include('stroke="#FF5733"')
+    })
+
+    it('should handle different width units', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([signer0.account.address, 0n, 'black', '2rem'])
+      expect(svg).to.include('stroke-width="2rem"')
+    })
+  })
+
+  describe('Complex signature rendering', function () {
+    it('should handle multi-part paths', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      const complexSignature = [
+        encodePacked(['string'], ['M10 10 L20 20']),
+        encodePacked(['string'], ['M30 30 L40 40'])
+      ]
+
+      await expect(contract.write.addSignature([complexSignature]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([signer0.account.address, 0n, 'black', '4px'])
+      expect(svg).to.include('M10 10 L20 20')
+      expect(svg).to.include('M30 30 L40 40')
+    })
+
+    it('should handle large path data', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      const largePath = 'M ' + Array(50).fill('10 10 L 20 20').join(' ')
+      const largeSignature = [encodePacked(['string'], [largePath])]
+
+      await expect(contract.write.addSignature([largeSignature]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([signer0.account.address, 0n, 'black', '1px'])
+      expect(svg).to.include(largePath)
+    })
+  })
+
   describe('Edge cases', function () {
+    it('should handle empty color and width strings', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([signer0.account.address, 0n, '', ''])
+      expect(svg).to.include('stroke=""')
+      expect(svg).to.include('stroke-width=""')
+    })
+
+    it('should handle special characters in color names', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(contract.write.addSignature([sampleSignature3]))
+        .to.emit(contract, 'NewSignature')
+        .withArgs(getAddress(signer0.account.address), 0)
+
+      const svg = await contract.read.svg([
+        signer0.account.address,
+        0n,
+        'rgb(255, 0, 0)',
+        '2px'
+      ])
+      expect(svg).to.include('stroke="rgb(255, 0, 0)"')
+    })
+
+    it('should revert on invalid signature index with custom parameters', async function () {
+      const { contract, signer0 } = await loadFixture(signatureRepositoryFixture)
+
+      await expect(
+        contract.read.svg([signer0.account.address, 999n, 'black', '4px'])
+      ).to.be.rejectedWith('InvalidSignatureIndex')
+
+      await expect(
+        contract.read.uri([signer0.account.address, 999n, 'black', '4px'])
+      ).to.be.rejectedWith('InvalidSignatureIndex')
+    })
+
     it('should handle multiple users with signatures', async function () {
       const { contract, signer0, signer1 } = await loadFixture(signatureRepositoryFixture)
 
