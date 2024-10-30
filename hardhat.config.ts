@@ -8,6 +8,7 @@ import 'hardhat-chai-matchers-viem'
 import 'hardhat-contract-sizer'
 
 import './tasks/accounts'
+import './tasks/process-signatures'
 
 dotenv.config()
 
