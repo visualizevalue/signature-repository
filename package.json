@@ -1,6 +1,9 @@
 {
   "name": "@visualizevalue/signature-repository",
   "version": "1.0.0",
+  "files": [
+    "contracts/**/*"
+  ],
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
     "@nomicfoundation/hardhat-ignition": "^0.15.5",
