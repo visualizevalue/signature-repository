@@ -115,9 +115,10 @@ contract SignatureRepository {
     function svg(address signer, uint256 index, string memory color, string memory width) public view returns (string memory) {
         return string(abi.encodePacked(
             '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">'
-                '<p '
+                '<path '
                     'stroke="', color, '" '
                     'stroke-width="', width, '" '
+                    'stroke-linecap="round" '
                     'fill="none" '
                     'd="', signaturePath(signer, index), '"'
                 '/>'
