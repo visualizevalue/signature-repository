@@ -53,12 +53,13 @@ function compareFiles(file1Path: string, file2Path: string): void {
 }
 
 task('process-signatures', 'Process signature SVG files')
-  .setAction(async (_, hre) => {
+  .addParam<string>('folder', 'The folder name with the SVG files', 'jack')
+  .setAction(async ({ folder }) => {
     console.log('Processing signature files...')
 
     const baseDir = './data'
-    const jackDir = join(baseDir, 'jack')
-    const smallDir = join(jackDir, 'sm')
+    const assetDir = join(baseDir, folder)
+    const smallDir = join(assetDir, 'sm')
 
     // Create directories if they don't exist
     if (!existsSync(smallDir)) {
@@ -75,7 +76,7 @@ task('process-signatures', 'Process signature SVG files')
     for (let i = 1; i <= 79; i++) {
       const fileNum = i.toString().padStart(2, '0')
       const fileName = `${fileNum}.svg`
-      const filePath = join(jackDir, fileName)
+      const filePath = join(assetDir, fileName)
 
       try {
         const svgContent = readFileSync(filePath, 'utf-8')
@@ -108,8 +109,8 @@ task('process-signatures', 'Process signature SVG files')
 
     console.log('\nWriting JSON files...')
 
-    const signaturesPath = join(baseDir, 'signatures.json')
-    const signaturesSMPath = join(baseDir, 'signatures-sm.json')
+    const signaturesPath = join(baseDir, `signatures-${folder}.json`)
+    const signaturesSMPath = join(baseDir, `signatures-${folder}-sm.json`)
 
     // Write JSON files
     writeFileSync(signaturesPath, JSON.stringify(pathData, null, 2))
