@@ -69,8 +69,10 @@ task('store-signatures', 'Store signatures in the deployed contract')
       batches.push(currentBatch)
     }
 
-    console.log(`Found ${Object.keys(signatures).length} signatures`)
-    console.log(`Split into ${batches.length} batches of max ${BATCH_SIZE} signatures`)
+    const total = Object.keys(signatures).length
+    const actual = total - start + 1
+    console.log(`Found ${total} signatures (using ${actual})`)
+    console.log(`Split into ${batches.length} batches of max ${Math.min(BATCH_SIZE, actual)} signatures`)
 
     // Store signatures
     console.log('\nStoring signatures...')
