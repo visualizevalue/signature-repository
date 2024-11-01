@@ -1,5 +1,5 @@
 import { task } from 'hardhat/config'
-import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'fs'
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'fs'
 import { join } from 'path'
 
 interface PathData {
@@ -52,6 +52,23 @@ function compareFiles(file1Path: string, file2Path: string): void {
   console.log(`Rounded:            ${formatBytes(avgSize2)}`)
 }
 
+function countSvgFiles(directoryPath: string): number {
+  try {
+    const files = readdirSync(directoryPath, { withFileTypes: true })
+    let count = 0
+
+    for (const file of files) {
+      if (file.isFile() && file.name.toLowerCase().endsWith('.svg')) {
+        count++
+      }
+    }
+
+    return count
+  } catch (error) {
+    throw new Error(`Error counting SVG files: ${(error as Error).message}`)
+  }
+}
+
 task('process-signatures', 'Process signature SVG files')
   .addParam<string>('folder', 'The folder name with the SVG files', 'jack')
   .setAction(async ({ folder }) => {
@@ -66,6 +83,8 @@ task('process-signatures', 'Process signature SVG files')
       mkdirSync(smallDir, { recursive: true })
     }
 
+    const numberOfFiles = countSvgFiles(assetDir)
+
     const pathData: PathData = {}
     const pathDataSm: PathData = {}
     let filesProcessed = 0
@@ -73,7 +92,7 @@ task('process-signatures', 'Process signature SVG files')
     let totalRoundedChars = 0
 
     // Process each SVG file
-    for (let i = 1; i <= 79; i++) {
+    for (let i = 1; i <= numberOfFiles; i++) {
       const fileNum = i.toString().padStart(2, '0')
       const fileName = `${fileNum}.svg`
       const filePath = join(assetDir, fileName)
@@ -101,7 +120,7 @@ task('process-signatures', 'Process signature SVG files')
         writeFileSync(join(smallDir, fileName), newSvgContent)
 
         filesProcessed++
-        process.stdout.write(`Processing files: ${filesProcessed}/79\r`)
+        process.stdout.write(`Processing files: ${filesProcessed}/${numberOfFiles}\r`)
       } catch (error) {
         console.error(`Error processing ${fileName}:`, error)
       }
