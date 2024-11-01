@@ -10,8 +10,9 @@ interface SignatureData {
 task('store-signatures', 'Store signatures in the deployed contract')
   .addParam('json', 'Path to the signatures JSON file', './data/signatures-sm.json', types.string)
   .addParam('contract', 'Address of the deployed SignatureRepository contract')
+  .addParam('start', 'Which signature to start with', '1')
   .setAction(async (taskArgs, hre) => {
-    const { json, contract: contractAddress } = taskArgs
+    const { json, contract: contractAddress, start } = taskArgs
     const [signer] = await hre.viem.getWalletClients()
     const publicClient = await hre.viem.getPublicClient()
 
@@ -48,6 +49,11 @@ task('store-signatures', 'Store signatures in the deployed contract')
 
     // Convert each signature path to a hex array
     for (const [_id, path] of Object.entries(signatures)) {
+      if (_id < start) {
+        console.log(`Skipping #${_id} (starting with ${start})`)
+        continue
+      }
+
       // Each signature is represented as a single-element array of hex strings
       const signatureArray = [toHex(new TextEncoder().encode(path))]
       currentBatch.push(signatureArray)
